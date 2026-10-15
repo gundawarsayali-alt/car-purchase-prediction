@@ -1,0 +1,132 @@
+import streamlit as st 
+import pandas as pd 
+import joblib 
+# ----------------------------- 
+# Load dataset and model 
+# ----------------------------- 
+df = pd.read_csv("carpurchasing.csv", encoding="latin1") 
+model = joblib.load("best_model.pkl") 
+# ----------------------------- 
+# Page settings 
+# ----------------------------- 
+st.set_page_config( 
+page_title="Car Purchase Amount Prediction", 
+page_icon="🚗", 
+layout="centered" 
+) 
+st.title("🚗 Car Purchase Amount Prediction") 
+st.write("Enter customer details to predict the car purchase amount.") 
+ 
+# ----------------------------- 
+# Input fields 
+# ----------------------------- 
+customer_name = st.selectbox( 
+    "Customer Name", 
+    sorted(df["customer name"].unique()) 
+) 
+ 
+customer_email = st.selectbox( 
+    "Customer Email", 
+    sorted(df["customer e-mail"].unique()) 
+) 
+ 
+country = st.selectbox( 
+    "Country", 
+    sorted(df["country"].unique()) 
+) 
+ 
+gender = st.selectbox( 
+    "Gender", 
+    [0, 1] 
+) 
+ 
+age = st.number_input( 
+    "Age", 
+    min_value=float(df["age"].min()), 
+    max_value=float(df["age"].max()), 
+    value=float(df["age"].mean()) 
+) 
+ 
+annual_salary = st.number_input( 
+    "Annual Salary", 
+    min_value=float(df["annual Salary"].min()), 
+    max_value=float(df["annual Salary"].max()), 
+    value=float(df["annual Salary"].mean()) 
+) 
+ 
+credit_card_debt = st.number_input( 
+    "Credit Card Debt", 
+    min_value=float(df["credit card debt"].min()), 
+    max_value=float(df["credit card debt"].max()), 
+    value=float(df["credit card debt"].mean()) 
+) 
+ 
+net_worth = st.number_input( 
+    "Net Worth", 
+    min_value=float(df["net worth"].min()), 
+    max_value=float(df["net worth"].max()), 
+    value=float(df["net worth"].mean()) 
+) 
+ 
+ 
+# ----------------------------- 
+# Prediction button 
+# ----------------------------- 
+if st.button("Predict Car Purchase Amount"): 
+ 
+    # Create input dataframe 
+    input_data = pd.DataFrame({ 
+        "customer name": [customer_name], 
+        "customer e-mail": [customer_email], 
+        "country": [country], 
+        "gender": [gender], 
+        "age": [age], 
+        "annual Salary": [annual_salary], 
+        "credit card debt": [credit_card_debt], 
+        "net worth": [net_worth] 
+    }) 
+ 
+    # Remove target column from original dataset 
+    training_data = df.drop("car purchase amount", axis=1) 
+ 
+    # Combine training data and user input 
+    combined_data = pd.concat( 
+        [training_data, input_data], 
+        ignore_index=True 
+    ) 
+ 
+    # Convert categorical columns into dummy variables 
+    categorical_columns = [ 
+        "customer name", 
+        "customer e-mail", 
+        "country" 
+    ] 
+ 
+    combined_data = pd.get_dummies( 
+        combined_data, 
+        columns=categorical_columns, 
+        drop_first=True 
+    ) 
+ 
+    # Take only the user's row 
+    input_encoded = combined_data.iloc[[-1]].copy() 
+ 
+    # Create the exact columns used during model training 
+    training_encoded = pd.get_dummies( 
+        training_data, 
+        columns=categorical_columns, 
+        drop_first=True 
+    ) 
+ 
+    input_encoded = input_encoded.reindex( 
+        columns=training_encoded.columns, 
+        fill_value=0 
+    ) 
+ 
+    # Make prediction 
+    prediction = model.predict(input_encoded)[0] 
+ 
+    # Display result 
+    st.success( 
+f"Predicted Car Purchase Amount: ₹{prediction:,.2f}" 
+)
